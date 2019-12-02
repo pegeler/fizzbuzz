@@ -1,9 +1,12 @@
 fizzbuzz <- function(n) {
   out <- n <- if ( length(n) == 1 ) seq_len(n) else n
+  
+  fizz <- !n %% 3
+  buzz <- !n %% 5
 
-  out[!n %% 3] <- "fizz"
-  out[!n %% 5] <- "buzz"
-  out[!n %% 3 & !n %% 5] <- "fizzbuzz"
+  out[fizz & !buzz] <- "fizz"
+  out[buzz & !fizz] <- "buzz"
+  out[fizz &  buzz] <- "fizzbuzz"
 
   out
 }
