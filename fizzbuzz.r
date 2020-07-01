@@ -1,3 +1,4 @@
+#!/usr/bin/env Rscript
 fizzbuzz <- function(n) {
   if ( length(n) == 1 )
     n <- seq_len(n)
@@ -12,4 +13,4 @@ fizzbuzz <- function(n) {
   n
 }
 
-fizzbuzz(100)
+cat(fizzbuzz(100), sep = "\n")
