@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 """
-========
 FizzBuzz
 ========
 
@@ -15,22 +14,29 @@ from typing import Callable
 RuleFunction = Callable[[int], str | None]
 
 
-class FizzBuzzInt:
+class FizzBuzzInt(int):
 
-    def __init__(self, n: int, rules: Iterable[RuleFunction]):
-        self.n = n
+    def __new__(cls, n: int, rules: Iterable[RuleFunction]):
+        return super().__new__(cls, n)
+
+    def __init__(self, _, rules: Iterable[RuleFunction]):
         self.replacements = []
         for f in rules:
             self._applyRule(f)
 
     def _applyRule(self, rule_function: RuleFunction):
-        if (r := rule_function(self.n)) is not None:
-            self.replacements.append(r)
+        match rule_function(self):
+            case str(r):
+                self.replacements.append(r)
+            case None:
+                pass
+            case _:
+                raise TypeError('Rule function returned unknown type.')
 
     def __str__(self):
         if self.replacements:
             return ''.join(self.replacements)
-        return str(self.n)
+        return super().__str__()
 
 
 def make_rule_function(z: int, word: str) -> RuleFunction:
@@ -48,7 +54,8 @@ def make_rule_function(z: int, word: str) -> RuleFunction:
 
 
 def create_rules(
-        substitutions: list[tuple[int, str]] | None = None) -> list[RuleFunction]:
+        substitutions: Iterable[tuple[int, str]] | None = None
+) -> list[RuleFunction]:
     """
     Create rules.
 
