@@ -1,16 +1,39 @@
 #!/usr/bin/env python3
 """
+========
 FizzBuzz
 ========
 
 A slightly over-engineered Python implementation of the classic FizzBuzz game.
 """
 import argparse
+from collections.abc import Iterable
+import dataclasses
 from itertools import starmap
 from typing import Callable
 
+RuleFunction = Callable[[int], str | None]
 
-def substitute(z: int, word: str) -> Callable[[int], str]:
+
+class FizzBuzzInt:
+
+    def __init__(self, n: int, rules: Iterable[RuleFunction]):
+        self.n = n
+        self.replacements = []
+        for f in rules:
+            self._applyRule(f)
+
+    def _applyRule(self, rule_function: RuleFunction):
+        if (r := rule_function(self.n)) is not None:
+            self.replacements.append(r)
+
+    def __str__(self):
+        if self.replacements:
+            return ''.join(self.replacements)
+        return str(self.n)
+
+
+def make_rule_function(z: int, word: str) -> RuleFunction:
     """
     Create a function that will return the specified ``word`` if ``n``
     divides ``z`` evenly. Otherwise, return an empty string.
@@ -18,34 +41,47 @@ def substitute(z: int, word: str) -> Callable[[int], str]:
     :param z: The divisor.
     :param word: The word to be substituted.
     """
-    def sub(n: int) -> str:
-        return word if n % z == 0 else ''
+    def sub(n: int) -> str | None:
+        return word if n % z == 0 else None
 
     return sub
 
 
-def fizzbuzz(to: int = 101,
-             substitutions: list[tuple[int, str]] | None = None) -> list[str]:
+def create_rules(
+        substitutions: list[tuple[int, str]] | None = None) -> list[RuleFunction]:
     """
-    Play the FizzBuzz game.
+    Create rules.
 
-    :param to: The number to count up to (exclusive).
     :param substitutions: A list of tuples. Each tuple should contain an integer
             for the divisibility test followed by the word that should replace
             the number if it passes the divisibility test. If ``None`` is given,
-            classic FizzBuzz rules using 3 and 5 are used. Words are stacked
-            such that the number 15 will yield "fizzbuzz" using classic rules.
-    :return: A list of strings from 1 to ``to`` with to substitutions made.
+            classic FizzBuzz rules using 3 and 5 are used.
+    :return: A list of rule functions.
     """
     if substitutions is None:
         substitutions = [(3, 'fizz'), (5, 'buzz')]
-    subs = list(starmap(substitute, substitutions))
-    return [''.join(s(x) for s in subs) or str(x) for x in range(1, to)]
+    return list(starmap(make_rule_function, substitutions))
 
 
-def _process_substitution_arg(arg: str):
+def fizzbuzz(until: int = 101,
+             rules: list[RuleFunction] | None = None) -> list[FizzBuzzInt]:
+    """
+    Play the FizzBuzz game.
+
+    :param until: The number to count up to (exclusive).
+    :param rules: A list of rule functions. If ``None`` is given, classic
+            FizzBuzz rules using 3 and 5 are used. Words are stacked
+            such that the number 15 will yield "fizzbuzz" using classic rules.
+    :return: A list of strings from 1 to ``to`` with to substitutions made.
+    """
+    if rules is None:
+        rules = create_rules()
+    return [FizzBuzzInt(x, rules=rules) for x in range(1, until)]
+
+
+def _process_rule_arg(arg: str):
     n, word = arg.split('=', 1)
-    return int(n), word
+    return make_rule_function(int(n), word)
 
 
 def parse_args(argv=None):
@@ -53,16 +89,16 @@ def parse_args(argv=None):
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument(
-        '-t', '--to',
-        dest='to',
+        '-u', '--until',
+        dest='until',
         type=int,
         default=101,
         help='The number to count up to (exclusive).')
     parser.add_argument(
-        '-s', '--substitute',
-        dest='substitutions',
+        '-r', '--rules',
+        dest='rules',
         nargs='*',
-        type=_process_substitution_arg,
+        type=_process_rule_arg,
         default=None,
         help='Words to substitute for numbers in the form "z=word", '
              'where "z" is the integer for the divisibility test. '
