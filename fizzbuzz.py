@@ -20,16 +20,14 @@ class FizzBuzzInt(int):
         return super().__new__(cls, n)
 
     def __init__(self, _, rules: Iterable[RuleFunction]):
-        self.replacements = []
-        for f in rules:
-            self._applyRule(f)
+        self.replacements = list(filter(None, map(self._applyRule, rules)))
 
-    def _applyRule(self, rule_function: RuleFunction):
+    def _applyRule(self, rule_function: RuleFunction) -> str | None:
         match rule_function(self):
             case str(r):
-                self.replacements.append(r)
+                return r
             case None:
-                pass
+                return None
             case _:
                 raise TypeError('Rule function returned unknown type.')
 
